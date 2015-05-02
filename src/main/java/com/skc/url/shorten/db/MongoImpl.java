@@ -2,6 +2,7 @@ package com.skc.url.shorten.db;
 
 import java.net.UnknownHostException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -19,12 +20,15 @@ import com.skc.url.shorten.utils.ObjectUtils;
  * */
 @Component("mongo")
 public class MongoImpl extends AbstractMongo {
+	final Logger LOG = Logger.getLogger(MongoImpl.class);
 	
 	@Override
 	public DB getDB(MongoClient client, String db) {
 		if(StringUtils.isEmpty(db)){
 			db=CommonConstraints.DATABASE_NAME;
+			LOG.info("Database Name Set as "+db);
 		}
+		LOG.info("DB is going to create ... ");
 		return super.getDB(client, db);
 	}
 	
@@ -33,10 +37,11 @@ public class MongoImpl extends AbstractMongo {
 		if(ObjectUtils.checkNull(db)){
 			try {
 				db=this.getDB(super.getMongoClient(), null);
+				LOG.info("DB value was passed as null. Hence , Created default DB");
 			} catch (MongoException e) {
-				e.printStackTrace();
+				LOG.error(e);
 			} catch (UnknownHostException e) {
-				e.printStackTrace();
+				LOG.error(e);
 			}
 		}
 		return super.getCollection(db, collection);

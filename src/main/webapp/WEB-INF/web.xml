@@ -13,18 +13,26 @@
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
 
+	<!-- Log4j Configuration -->
+	<context-param>
+		<param-name>log4jConfigLocation</param-name>
+		<param-value>/WEB-INF/log4j.xml</param-value>
+	</context-param>
+
+	<listener>
+		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+	</listener>
 	<servlet>
 		<servlet-name>jersey-serlvet</servlet-name>
 		<servlet-class>
-			com.sun.jersey.spi.spring.container.servlet.SpringServlet</servlet-class>
+			com.sun.jersey.spi.spring.container.servlet.SpringServlet
+		</servlet-class>
 		<init-param>
 			<param-name>com.sun.jersey.config.property.packages</param-name>
-			<param-value>com.skc.url.shorten.rest.api</param-value>
+			<param-value>com.skc.url.shorten.rest.api;com.skc.url.shorten.exception</param-value>
 		</init-param>
-		<!-- <init-param>
-			<param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
-			<param-value>true</param-value>
-		</init-param> -->
+		<!-- <init-param> <param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name> 
+			<param-value>true</param-value> </init-param> -->
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 

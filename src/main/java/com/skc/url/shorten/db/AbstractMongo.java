@@ -11,7 +11,7 @@ import com.skc.url.shorten.utils.CommonConstraints;
 public abstract class AbstractMongo implements Mongo {
 
 	/**
-	 * This method will create a MongoClient after giveing the Host and Port Number
+	 * This method will create a MongoClient after giving the Host and Port Number
 	 * 
 	 * @param host as {@link String}
 	 * @param port as {@link String}
