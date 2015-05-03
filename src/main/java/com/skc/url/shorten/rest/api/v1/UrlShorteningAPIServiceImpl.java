@@ -102,7 +102,7 @@ public class UrlShorteningAPIServiceImpl {
 				collection = mongo.getCollection(null, CommonConstraints.DB_COLLECTIONS);
 			}catch(Exception e){
 				LOG.error(e);
-				throw new SystemGenericException("400","Unable to reach to the Database",url);
+				throw new SystemGenericException(CommonConstraints.ERROR_DB_400,CommonConstraints.ERROR_DB_400_MSG,url);
 			}
 			DBCursor cursor = collection.find(new BasicDBObject(CommonConstraints.REQUEST_URL,url).append(CommonConstraints.USERNAME, userName));
 			while(cursor.hasNext()){
@@ -137,7 +137,7 @@ public class UrlShorteningAPIServiceImpl {
 			LOG.debug("Time Taken to execute UrlShorteningAPIServiceImpl is "+(new Date().getTime()-calculateTime));
 		}
 		if(isException){
-			throw new SystemGenericException("500","Unable to Process your Request as of now. Try Again Later",url);
+			throw new SystemGenericException(CommonConstraints.ERROR_DB_500,CommonConstraints.ERROR_WEB_500_MSG,url);
 		}
 		return webResponseBuilder.entity(response).build();
 	}

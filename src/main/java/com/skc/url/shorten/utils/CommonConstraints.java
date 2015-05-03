@@ -38,4 +38,28 @@ public class CommonConstraints {
 	public static final String DELIM_COLLON = ":";
 	public static final String DELIM_SPACE = " ";
 	public static final String DELIM_AT = "@";
+	/**
+	 * Error Code
+	 * */
+	public static final  String ERROR_DB_400="DB_400";
+	public static final String ERROR_DB_500="DB_500";
+	public static final String ERROR_WEB_500="WEB_500";
+	public static final String ERROR_WEB_400="WEB_400";
+	public static final String ERROR_WEB_300="WEB_300";
+	/**
+	 * Error Message
+	 * */
+	public static final String ERROR_DB_400_MSG="Unable to reach database. Please try After Some time";
+	public static final String ERROR_DB_500_MSG="Required Data Not found in Database.";
+	public static final String ERROR_WEB_500_MSG="Some Error Occurs. Please try after some time";
+	public static final String ERROR_WEB_400_MSG="Unable to locate the requested service . Please Try after some time";
+	public static final String ERROR_WEB_300_MSG="Redirect Web Request.";
+	/**
+	 * User Related Constraints
+	 * */
+	public static final String EMAIL = "email";
+	public static final String PASSWORD = "password";
+	public static final String LASTNAME = "lastname";
+	public static final String FIRSTNAME = "firstname";
+	public static final String PATH_USER = "/user";
 }

@@ -10,11 +10,12 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
+import com.skc.url.shorten.exception.SystemGenericException;
 import com.skc.url.shorten.utils.CommonConstraints;
 import com.skc.url.shorten.utils.ObjectUtils;
 
 /**
- * <p>Concreate Class for Mongo Implementation </p>
+ * <p>Concrete Class for Mongo Implementation </p>
  * @author IgnatiusCipher
  * @version 1.0
  * */
@@ -40,8 +41,10 @@ public class MongoImpl extends AbstractMongo {
 				LOG.info("DB value was passed as null. Hence , Created default DB");
 			} catch (MongoException e) {
 				LOG.error(e);
+				throw new SystemGenericException(CommonConstraints.ERROR_DB_400,CommonConstraints.ERROR_DB_400_MSG);
 			} catch (UnknownHostException e) {
 				LOG.error(e);
+				throw new SystemGenericException(CommonConstraints.ERROR_DB_400,CommonConstraints.ERROR_DB_400_MSG);
 			}
 		}
 		return super.getCollection(db, collection);
