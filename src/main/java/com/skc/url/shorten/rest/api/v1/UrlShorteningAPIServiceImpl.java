@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.BasicDBObject;
@@ -32,6 +33,7 @@ import com.skc.url.shorten.db.Mongo;
 import com.skc.url.shorten.exception.SystemGenericException;
 import com.skc.url.shorten.model.v1.UrlModelResponse;
 import com.skc.url.shorten.utils.CommonConstraints;
+import com.skc.url.shorten.utils.DateUtils;
 import com.skc.url.shorten.utils.StringShortenUtils;
 import com.sun.jersey.core.spi.factory.ResponseBuilderImpl;
 
@@ -48,6 +50,9 @@ public class UrlShorteningAPIServiceImpl {
 	@Resource(name="mongo")
 	Mongo mongo;
 	
+
+	@Value("${host.system.url}")
+	String hostUrl;
 	
 	private static final String URL_SHORTED = "URL Shorted";
 //	private static final String ERROR_STATUS_MESSAGE = "Unable to make url Shorting. Please try after sometime";
@@ -96,10 +101,10 @@ public class UrlShorteningAPIServiceImpl {
 		}
 		
 		if(!isException){
-			String short_url = CommonConstraints.HOST_URL+request.getContextPath()+request.getServletPath()+CommonConstraints.DELIM_SLASH+shortLink;
+			String short_url = hostUrl+request.getContextPath()+request.getServletPath()+CommonConstraints.DELIM_SLASH+shortLink;
 			DBCollection collection=null;
 			try{
-				collection = mongo.getCollection(null, CommonConstraints.DB_COLLECTIONS);
+				collection = mongo.getCollection(null, CommonConstraints.DB_COLLECTIONS_URL);
 			}catch(Exception e){
 				LOG.error(e);
 				throw new SystemGenericException(CommonConstraints.ERROR_DB_400,CommonConstraints.ERROR_DB_400_MSG,url);
@@ -121,7 +126,7 @@ public class UrlShorteningAPIServiceImpl {
 				.append(CommonConstraints.SHORT_URL,short_url)
 				.append(CommonConstraints.SHORT_LINK, shortLink)
 				.append(shortLink, url)
-				.append(CommonConstraints.CREATED_DATE, new Date())
+				.append(CommonConstraints.CREATED_DATE, DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS, new Date()))
 				.append(CommonConstraints.VERSION, CommonConstraints.VERSION_V1)
 				.append(CommonConstraints.REDIRECTED_NUMBER, 0);
 				collection.save(dbObject);
@@ -137,7 +142,7 @@ public class UrlShorteningAPIServiceImpl {
 			LOG.debug("Time Taken to execute UrlShorteningAPIServiceImpl is "+(new Date().getTime()-calculateTime));
 		}
 		if(isException){
-			throw new SystemGenericException(CommonConstraints.ERROR_DB_500,CommonConstraints.ERROR_WEB_500_MSG,url);
+			throw new SystemGenericException(CommonConstraints.ERROR_WEB_500,CommonConstraints.ERROR_WEB_500_MSG,url);
 		}
 		return webResponseBuilder.entity(response).build();
 	}

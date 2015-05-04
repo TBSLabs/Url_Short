@@ -18,8 +18,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
@@ -29,7 +31,9 @@ import com.skc.url.shorten.exception.SystemGenericException;
 import com.skc.url.shorten.model.v1.UserDetailsRequest;
 import com.skc.url.shorten.model.v1.UserDetailsResponse;
 import com.skc.url.shorten.model.v1.UserDetailsResponse.UserLinks;
+import com.skc.url.shorten.secure.SecureNumberGeneratorService;
 import com.skc.url.shorten.utils.CommonConstraints;
+import com.skc.url.shorten.utils.DateUtils;
 import com.skc.url.shorten.utils.ObjectUtils;
 
 /**
@@ -40,6 +44,7 @@ import com.skc.url.shorten.utils.ObjectUtils;
 @Service("userService")
 @Path(CommonConstraints.PATH_USER)
 public class UserServiceImpl {
+
 	final Logger LOG = Logger.getLogger(UserServiceImpl.class);
 
 	private static final String USER_DETAILS = "User Details";
@@ -48,6 +53,12 @@ public class UserServiceImpl {
 	
 	@Resource(name="mongo")
 	Mongo mongo;
+	
+	@Resource(name="secureNumberGeneratorService")
+	SecureNumberGeneratorService secureNumber;
+	
+	@Value("${host.system.url}")
+	String hostUrl;
 	
 	/**
 	 * <p> This is the end point to create an user</p>
@@ -67,31 +78,48 @@ public class UserServiceImpl {
 		
 		DBCollection collection = null;
 		try{
-			collection= getUserDBCollection("user_collection");
+			collection= getUserDBCollection(CommonConstraints.DB_COLLECTION_USER);
 			LOG.info("DB Collection is located and got it from DB");
 		}catch(Exception e){
 			LOG.error(e);
 			throw new SystemGenericException(CommonConstraints.ERROR_DB_400,CommonConstraints.ERROR_DB_400_MSG);
 		}
-	
+		
+		String userId = secureNumber.getSecureId().toString();
 		//TODO Password to be encrypted
 		DBObject userObject =new  BasicDBObject(CommonConstraints.FIRSTNAME,detailsRequest.getFirstName())
 							.append(CommonConstraints.LASTNAME, detailsRequest.getLastName())
 							.append(CommonConstraints.PASSWORD, detailsRequest.getPassword())
 							.append(CommonConstraints.EMAIL, detailsRequest.getUserEmail())
-							.append(CommonConstraints.USERNAME, detailsRequest.getUsername())
-							.append(CommonConstraints.CREATED_DATE, new Date());
+							.append(CommonConstraints.USERNAME, userId)
+							.append(CommonConstraints.CREATED_DATE, DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS_S_Z, new Date()));
 		if(ObjectUtils.checkNull(collection)){
 			throw new SystemGenericException(CommonConstraints.ERROR_DB_500,CommonConstraints.ERROR_DB_500_MSG);
 		}
+		
+		DBObject userNameCheck = new BasicDBObject(CommonConstraints.USERNAME,userId);
+		DBObject emailCheck = new BasicDBObject(CommonConstraints.EMAIL,detailsRequest.getUserEmail());
+		
+		BasicDBList basicDBList = new BasicDBList();
+		basicDBList.add(userNameCheck);
+		basicDBList.add(emailCheck);
+		
+		//References : http://stackoverflow.com/questions/10444038/mongo-db-query-in-java
+		DBObject dbObject = new BasicDBObject(CommonConstraints.DELIM_DOLLER+CommonConstraints.MONGO_OR,basicDBList);
+		DBCursor cursor = collection.find(dbObject);
+		if(cursor.size()>0){
+			throw new SystemGenericException(CommonConstraints.ERROR_DUPLICATE_3000,CommonConstraints.ERROR_DUPLICATE_3000_MSG+CommonConstraints.EMAIL);
+		}
+		
+		
 		collection.save(userObject);
 		LOG.info("User Successfully Created having username "+detailsRequest.getUsername());
 		
-		String short_url = CommonConstraints.HOST_URL+request.getContextPath()+request.getServletPath()+CommonConstraints.PATH_USER+CommonConstraints.DELIM_SLASH+detailsRequest.getUsername();
+		String short_url = hostUrl+request.getContextPath()+request.getServletPath()+CommonConstraints.PATH_USER+CommonConstraints.DELIM_SLASH+detailsRequest.getUsername();
 		UserDetailsResponse detailsResponse = new UserDetailsResponse();
-		detailsResponse.setCreatedDate(new Date().toString());
+		detailsResponse.setCreatedDate(DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS_S_Z, new Date()));
 		detailsResponse.setMessage(USER_IS_SUCCESSFULLY_CREATED);
-		detailsResponse.setUsername(detailsRequest.getUsername());
+		detailsResponse.setUsername((String) userObject.get(CommonConstraints.USERNAME));
 		detailsResponse.setPassword(detailsRequest.getPassword());
 		detailsResponse.setHome_url(short_url);
 		
@@ -120,8 +148,8 @@ public class UserServiceImpl {
 		DBCollection collection = null;
 		DBCollection shurtenCollection=null;
 		try{
-			collection= getUserDBCollection("user_collection");
-			shurtenCollection = getUserDBCollection(CommonConstraints.DB_COLLECTIONS);
+			collection= getUserDBCollection(CommonConstraints.DB_COLLECTION_USER);
+			shurtenCollection = getUserDBCollection(CommonConstraints.DB_COLLECTIONS_URL);
 			LOG.info("DB Collection is located and got it from DB");
 		}catch(Exception e){
 			LOG.error(e);
@@ -146,9 +174,9 @@ public class UserServiceImpl {
 			link.setVersion((String) object.get(CommonConstraints.VERSION));
 			links.add(link);
 		}
-		detailsResponse.setCreatedDate(((Date) responseObject.get(CommonConstraints.CREATED_DATE)).toString());
+		detailsResponse.setCreatedDate((String) responseObject.get(CommonConstraints.CREATED_DATE));
 		detailsResponse.setUsername((String) responseObject.get(CommonConstraints.USERNAME));
-		detailsResponse.setHome_url(CommonConstraints.HOST_URL+request.getContextPath()+request.getServletPath()+CommonConstraints.PATH_USER+CommonConstraints.DELIM_SLASH+detailsResponse.getUsername());
+		detailsResponse.setHome_url(hostUrl+request.getContextPath()+request.getServletPath()+CommonConstraints.PATH_USER+CommonConstraints.DELIM_SLASH+detailsResponse.getUsername());
 		detailsResponse.setMessage(USER_DETAILS);
 		detailsResponse.setPassword((String) responseObject.get(CommonConstraints.PASSWORD));
 		detailsResponse.setLinks(links);

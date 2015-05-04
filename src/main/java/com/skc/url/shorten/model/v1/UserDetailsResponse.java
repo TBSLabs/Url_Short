@@ -3,9 +3,10 @@ package com.skc.url.shorten.model.v1;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
-import com.skc.url.shorten.model.v1.UserDetailsResponse.UserLinks;
 import com.skc.url.shorten.utils.CommonConstraints;
 
 /**
@@ -14,6 +15,7 @@ import com.skc.url.shorten.utils.CommonConstraints;
  * @version 1.0
  * */
 @XmlRootElement(name="response")
+@XmlType(propOrder={"username","password","createdDate","home_url","message","links"})
 public class UserDetailsResponse {
 	private String username;
 	private String password;
@@ -24,14 +26,14 @@ public class UserDetailsResponse {
 	public String getUsername() {
 		return username;
 	}
-	@XmlElement(name="username")
+	@XmlElement(name=CommonConstraints.USERNAME)
 	public void setUsername(String username) {
 		this.username = username;
 	}
 	public String getPassword() {
 		return password;
 	}
-	@XmlElement(name="password")
+	@XmlElement(name=CommonConstraints.PASSWORD)
 	public void setPassword(String password) {
 		this.password = password;
 	}
@@ -45,7 +47,7 @@ public class UserDetailsResponse {
 	public String getCreatedDate() {
 		return createdDate;
 	}
-	@XmlElement(name="created-on")
+	@XmlElement(name=CommonConstraints.CREATED_DATE)
 	public void setCreatedDate(String createdDate) {
 		this.createdDate = createdDate;
 	}
@@ -56,15 +58,15 @@ public class UserDetailsResponse {
 	public void setHome_url(String home_url) {
 		this.home_url = home_url;
 	}
-	@XmlElement(name="links",required=false,nillable=true,type=UserLinks.class)
+	@XmlElementWrapper
+	@XmlElement(name="link",required=false,nillable=true,type=UserLinks.class)
 	public List<UserLinks> getLinks() {
 		return links;
 	}
 	public void setLinks(List<UserLinks> links) {
 		this.links = links;
 	}
-	
-	@XmlRootElement(name="link")
+	@XmlRootElement(name = "links")
 	public static class UserLinks{
 		private String requestedLinks;
 		private String shortLink;
