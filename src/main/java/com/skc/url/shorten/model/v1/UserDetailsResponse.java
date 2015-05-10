@@ -7,6 +7,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.skc.url.shorten.utils.CommonConstraints;
 
 /**
@@ -16,6 +17,7 @@ import com.skc.url.shorten.utils.CommonConstraints;
  * */
 @XmlRootElement(name="response")
 @XmlType(propOrder={"username","password","createdDate","home_url","message","links"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserDetailsResponse {
 	private String username;
 	private String password;

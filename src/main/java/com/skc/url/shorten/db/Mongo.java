@@ -16,7 +16,7 @@ public interface Mongo {
 	/**
 	 * This Method will create a MongoClient based on host,port
 	 * */
-	public MongoClient getMongoClient(String host,String port) throws MongoException,UnknownHostException;
+	public MongoClient getMongoClient(String host,Integer port) throws MongoException,UnknownHostException;
 	
 	/**
 	 * This Method will create the LocalHost MongoClient assuming Mongo is running on 27017 port

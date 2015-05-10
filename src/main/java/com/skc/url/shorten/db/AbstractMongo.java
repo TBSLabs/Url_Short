@@ -17,9 +17,9 @@ public abstract class AbstractMongo implements Mongo {
 	 * @param port as {@link String}
 	 * @return {@link MongoClient}
 	 * */
-	public MongoClient getMongoClient(String host, String port)
+	public MongoClient getMongoClient(String host, Integer port)
 			throws MongoException, UnknownHostException {
-		return new MongoClient(host,Integer.parseInt(port));
+		return new MongoClient(host,port);
 	}
 
 	/**

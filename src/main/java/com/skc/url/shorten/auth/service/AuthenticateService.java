@@ -6,4 +6,5 @@ package com.skc.url.shorten.auth.service;
  * */
 public interface AuthenticateService {
 	public boolean authenticate(String credential);
+	public boolean checkForShortUrl(String url);
 }

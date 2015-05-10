@@ -8,6 +8,11 @@ public class ErrorMessage {
 	private String errorCode;
 	private String errorMessage;
 	private String errorLink;
+	
+	public ErrorMessage(){
+		
+	}
+	
 	public String getErrorCode() {
 		return errorCode;
 	}

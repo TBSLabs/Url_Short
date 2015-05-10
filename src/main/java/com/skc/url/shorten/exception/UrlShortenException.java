@@ -6,6 +6,8 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import org.apache.log4j.Logger;
+
 import com.skc.url.shorten.utils.ObjectUtils;
 
 /**
@@ -15,9 +17,11 @@ import com.skc.url.shorten.utils.ObjectUtils;
  * */
 @Provider
 public class UrlShortenException implements ExceptionMapper<SystemGenericException> {
-	
+	static final Logger LOGGER = Logger.getLogger(MongoExceptionProvider.class);
 
 	public Response toResponse(SystemGenericException systemException) {	
+		LOGGER.error(systemException);
+		
 		ErrorMessage errorMsg = new ErrorMessage();
 		errorMsg.setErrorCode(systemException.getErrorCode());
 		errorMsg.setErrorMessage(systemException.getErrorMessage());

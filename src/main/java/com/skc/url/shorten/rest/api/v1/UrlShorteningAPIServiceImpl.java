@@ -1,13 +1,8 @@
 package com.skc.url.shorten.rest.api.v1;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 import javax.annotation.Resource;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -26,7 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.skc.url.shorten.db.Mongo;
@@ -34,8 +28,8 @@ import com.skc.url.shorten.exception.SystemGenericException;
 import com.skc.url.shorten.model.v1.UrlModelResponse;
 import com.skc.url.shorten.utils.CommonConstraints;
 import com.skc.url.shorten.utils.DateUtils;
+import com.skc.url.shorten.utils.MongoUtils;
 import com.skc.url.shorten.utils.StringShortenUtils;
-import com.sun.jersey.core.spi.factory.ResponseBuilderImpl;
 
 /**
  * <p> This is the endpoint for the accepting the Longer URL and will make that url as short and return it to User</p>
@@ -50,6 +44,8 @@ public class UrlShorteningAPIServiceImpl {
 	@Resource(name="mongo")
 	Mongo mongo;
 	
+	@Resource(name="mongoUtils")
+	MongoUtils utils; 
 
 	@Value("${host.system.url}")
 	String hostUrl;
@@ -78,38 +74,15 @@ public class UrlShorteningAPIServiceImpl {
 		boolean isExist = false;
 		String shortLink=null;
 		String defaultMessage=URL_SHORTED;
-		
-		ResponseBuilder webResponseBuilder=new ResponseBuilderImpl();
-		try {
-			shortLink = StringShortenUtils.getShortenURL(url, userName);
-			LOG.info("Got the Shorten String for "+userName+" is "+shortLink);
-		} catch (InvalidKeyException e) {
-			isException=true;
-			LOG.error(e);
-		} catch (NoSuchAlgorithmException e) {
-			isException=true;
-			LOG.error(e);
-		} catch (NoSuchPaddingException e) {
-			isException=true;
-			LOG.error(e);
-		} catch (IllegalBlockSizeException e) {
-			isException=true;
-			LOG.error(e);
-		} catch (BadPaddingException e) {
-			isException=true;
-			LOG.error(e);
-		}
+		//TODO Migration from jersey 1 to jersey 2
+		ResponseBuilder webResponseBuilder=Response.status(Status.OK);
+		shortLink = StringShortenUtils.getShortenURL(url, userName);
+		LOG.info("Got the Shorten String for "+userName+" is "+shortLink);
 		
 		if(!isException){
 			String short_url = hostUrl+request.getContextPath()+request.getServletPath()+CommonConstraints.DELIM_SLASH+shortLink;
-			DBCollection collection=null;
-			try{
-				collection = mongo.getCollection(null, CommonConstraints.DB_COLLECTIONS_URL);
-			}catch(Exception e){
-				LOG.error(e);
-				throw new SystemGenericException(CommonConstraints.ERROR_DB_400,CommonConstraints.ERROR_DB_400_MSG,url);
-			}
-			DBCursor cursor = collection.find(new BasicDBObject(CommonConstraints.REQUEST_URL,url).append(CommonConstraints.USERNAME, userName));
+			
+			DBCursor cursor = utils.getDataFromCollection(CommonConstraints.DB_COLLECTIONS_URL, new BasicDBObject(CommonConstraints.REQUEST_URL,url).append(CommonConstraints.USERNAME, userName));
 			while(cursor.hasNext()){
 				DBObject dbObjectQueried = cursor.next();
 				short_url = (String) dbObjectQueried.get(CommonConstraints.SHORT_URL);
@@ -129,7 +102,7 @@ public class UrlShorteningAPIServiceImpl {
 				.append(CommonConstraints.CREATED_DATE, DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS, new Date()))
 				.append(CommonConstraints.VERSION, CommonConstraints.VERSION_V1)
 				.append(CommonConstraints.REDIRECTED_NUMBER, 0);
-				collection.save(dbObject);
+				utils.saveCollection(CommonConstraints.DB_COLLECTIONS_URL, dbObject);
 				webResponseBuilder = Response.status(Status.CREATED);
 			}
 			response.setShortenUrl(short_url);

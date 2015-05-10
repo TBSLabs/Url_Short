@@ -3,19 +3,20 @@ package com.skc.url.shorten.model.v1;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * <p>JAX-B Class for User related payload</p>
  * @author IgnatiusCipher
  * @version 1.0
  * */
 @XmlRootElement(name="request")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserDetailsRequest {
 	private String userEmail;
 	private String firstName;
 	private String lastName;
-	private String password;
-	//TODO Username shoud be remove. Automatic username as a number should generate
-	private String username;
+	private String updatedPassword;
 	public String getUserEmail() {
 		return userEmail;
 	}
@@ -37,20 +38,11 @@ public class UserDetailsRequest {
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
 	}
-	public String getPassword() {
-		return password;
+	public String getUpdatedPassword() {
+		return updatedPassword;
 	}
-	@XmlElement(name="password")
-	public void setPassword(String password) {
-		this.password = password;
+	@XmlElement(name="updatedPassword",nillable=true,required=false)
+	public void setUpdatedPassword(String updatedPassword) {
+		this.updatedPassword = updatedPassword;
 	}
-	public String getUsername() {
-		return username;
-	}
-	@XmlElement(name="username")
-	public void setUsername(String username) {
-		this.username = username;
-	}
-	
-	
 }

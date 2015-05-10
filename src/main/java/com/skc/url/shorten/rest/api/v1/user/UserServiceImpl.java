@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -34,7 +35,9 @@ import com.skc.url.shorten.model.v1.UserDetailsResponse.UserLinks;
 import com.skc.url.shorten.secure.SecureNumberGeneratorService;
 import com.skc.url.shorten.utils.CommonConstraints;
 import com.skc.url.shorten.utils.DateUtils;
+import com.skc.url.shorten.utils.MongoUtils;
 import com.skc.url.shorten.utils.ObjectUtils;
+import com.skc.url.shorten.utils.StringShortenUtils;
 
 /**
  * <p>This class contain all the method for CRUD Operation for user</p>
@@ -57,6 +60,9 @@ public class UserServiceImpl {
 	@Resource(name="secureNumberGeneratorService")
 	SecureNumberGeneratorService secureNumber;
 	
+	@Resource(name="mongoUtils")
+	MongoUtils utils;
+	
 	@Value("${host.system.url}")
 	String hostUrl;
 	
@@ -77,22 +83,20 @@ public class UserServiceImpl {
 		}
 		
 		DBCollection collection = null;
-		try{
-			collection= getUserDBCollection(CommonConstraints.DB_COLLECTION_USER);
-			LOG.info("DB Collection is located and got it from DB");
-		}catch(Exception e){
-			LOG.error(e);
-			throw new SystemGenericException(CommonConstraints.ERROR_DB_400,CommonConstraints.ERROR_DB_400_MSG);
-		}
-		
 		String userId = secureNumber.getSecureId().toString();
-		//TODO Password to be encrypted
+		String password=null;
+		
+		collection= getUserDBCollection(CommonConstraints.DB_COLLECTION_USER);
+		LOG.info("DB Collection is located and got it from DB");
+		password = StringShortenUtils.getEncryptedPassword(detailsRequest.getFirstName());
+		
 		DBObject userObject =new  BasicDBObject(CommonConstraints.FIRSTNAME,detailsRequest.getFirstName())
 							.append(CommonConstraints.LASTNAME, detailsRequest.getLastName())
-							.append(CommonConstraints.PASSWORD, detailsRequest.getPassword())
+							.append(CommonConstraints.PASSWORD, password)
 							.append(CommonConstraints.EMAIL, detailsRequest.getUserEmail())
 							.append(CommonConstraints.USERNAME, userId)
-							.append(CommonConstraints.CREATED_DATE, DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS_S_Z, new Date()));
+							.append(CommonConstraints.CREATED_DATE, DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS_S_Z, new Date()))
+							.append(CommonConstraints.IS_PASSWORD_CHANGE, false);
 		if(ObjectUtils.checkNull(collection)){
 			throw new SystemGenericException(CommonConstraints.ERROR_DB_500,CommonConstraints.ERROR_DB_500_MSG);
 		}
@@ -104,23 +108,21 @@ public class UserServiceImpl {
 		basicDBList.add(userNameCheck);
 		basicDBList.add(emailCheck);
 		
-		//References : http://stackoverflow.com/questions/10444038/mongo-db-query-in-java
-		DBObject dbObject = new BasicDBObject(CommonConstraints.DELIM_DOLLER+CommonConstraints.MONGO_OR,basicDBList);
-		DBCursor cursor = collection.find(dbObject);
+		DBCursor cursor = utils.getDataUsingOr(CommonConstraints.DB_COLLECTION_USER, basicDBList);
 		if(cursor.size()>0){
 			throw new SystemGenericException(CommonConstraints.ERROR_DUPLICATE_3000,CommonConstraints.ERROR_DUPLICATE_3000_MSG+CommonConstraints.EMAIL);
 		}
 		
 		
 		collection.save(userObject);
-		LOG.info("User Successfully Created having username "+detailsRequest.getUsername());
+		LOG.info("User Successfully Created having userId as  "+userId);
 		
-		String short_url = hostUrl+request.getContextPath()+request.getServletPath()+CommonConstraints.PATH_USER+CommonConstraints.DELIM_SLASH+detailsRequest.getUsername();
+		String short_url = hostUrl+request.getContextPath()+request.getServletPath()+CommonConstraints.PATH_USER+CommonConstraints.DELIM_SLASH+userId;
 		UserDetailsResponse detailsResponse = new UserDetailsResponse();
 		detailsResponse.setCreatedDate(DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS_S_Z, new Date()));
 		detailsResponse.setMessage(USER_IS_SUCCESSFULLY_CREATED);
 		detailsResponse.setUsername((String) userObject.get(CommonConstraints.USERNAME));
-		detailsResponse.setPassword(detailsRequest.getPassword());
+		detailsResponse.setPassword(password);
 		detailsResponse.setHome_url(short_url);
 		
 		if(LOG.isDebugEnabled()){
@@ -178,12 +180,75 @@ public class UserServiceImpl {
 		detailsResponse.setUsername((String) responseObject.get(CommonConstraints.USERNAME));
 		detailsResponse.setHome_url(hostUrl+request.getContextPath()+request.getServletPath()+CommonConstraints.PATH_USER+CommonConstraints.DELIM_SLASH+detailsResponse.getUsername());
 		detailsResponse.setMessage(USER_DETAILS);
-		detailsResponse.setPassword((String) responseObject.get(CommonConstraints.PASSWORD));
 		detailsResponse.setLinks(links);
 		if(LOG.isDebugEnabled()){
 			LOG.debug("Time Taken to execute UrlShorteningAPIServiceImpl is "+(new Date().getTime()-calculateTime));
 		}
 		return Response.ok().entity(detailsResponse).build();
+	}
+	
+	/**
+	 * <p>End point for user password update</p>
+	 * @param username type of {@link String}
+	 * @param detailsRequest type of {@link UserDetailsRequest}
+	 * @return {@link Response}
+	 * @throws SystemGenericException
+	 * */
+	@Path("/{username}")
+	@PUT
+	@Consumes(value={MediaType.APPLICATION_XML,MediaType.APPLICATION_JSON})
+	@Produces(value={MediaType.APPLICATION_XML,MediaType.APPLICATION_JSON})
+	public Response getUserUpdated(@PathParam(CommonConstraints.USERNAME)String username,UserDetailsRequest detailsRequest)throws SystemGenericException{
+		long calculateTime = new Date().getTime();
+		if(LOG.isDebugEnabled()){
+			LOG.debug("Got a request for Shortening at "+new Date());
+		}
+		
+		DBCollection collection = null;
+		try{
+			collection= getUserDBCollection(CommonConstraints.DB_COLLECTION_USER);
+			LOG.info("DB Collection is located and got it from DB");
+		}catch(Exception e){
+			LOG.error(e);
+			throw new SystemGenericException(CommonConstraints.ERROR_DB_400,CommonConstraints.ERROR_DB_400_MSG);
+		}
+		
+		DBObject dbObject = collection.findOne(new BasicDBObject(CommonConstraints.USERNAME,username));
+		if(ObjectUtils.checkNotNull(detailsRequest)){
+			LOG.info("Validating the properties for "+username+" payload for password update");
+			if(ObjectUtils.checkNotNull(detailsRequest.getFirstName()) && !ObjectUtils.checkEqualsString(detailsRequest.getFirstName(),(String) dbObject.get(CommonConstraints.FIRSTNAME))){
+				throw new SystemGenericException(CommonConstraints.ERROR_VALIDATE_2000,CommonConstraints.ERROR_VALIDATE_2000_MSG);
+			}
+			if(ObjectUtils.checkNotNull(detailsRequest.getLastName()) && !ObjectUtils.checkEqualsString(detailsRequest.getLastName(),(String) dbObject.get(CommonConstraints.LASTNAME))){
+				throw new SystemGenericException(CommonConstraints.ERROR_VALIDATE_2000,CommonConstraints.ERROR_VALIDATE_2000_MSG);
+			}
+			if(ObjectUtils.checkNotNull(detailsRequest.getUserEmail()) && !ObjectUtils.checkEqualsString(detailsRequest.getUserEmail(),(String) dbObject.get(CommonConstraints.EMAIL))){
+				throw new SystemGenericException(CommonConstraints.ERROR_VALIDATE_2000,CommonConstraints.ERROR_VALIDATE_2000_MSG);
+			}
+			if(ObjectUtils.checkNull(detailsRequest.getUpdatedPassword())){
+				throw new SystemGenericException(CommonConstraints.ERROR_VALIDATE_2000,CommonConstraints.ERROR_VALIDATE_2000_MSG);
+			}
+			LOG.info("Property are properly validated");
+		}
+		//Getting Password for updation
+		LOG.info("Encrypting the password for userId "+username);
+		String password = StringShortenUtils.getEncryptedPassword(detailsRequest.getUpdatedPassword());
+		
+		BasicDBObject basicDBObject = new BasicDBObject();
+		basicDBObject.putAll(dbObject);
+		basicDBObject.append(CommonConstraints.PASSWORD, password)
+					 .append(CommonConstraints.IS_PASSWORD_CHANGE, true)
+					 .append(CommonConstraints.UPDATED_DATE, DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS_S_Z, new Date()));
+		
+		utils.updateCollection(CommonConstraints.DB_COLLECTION_USER,dbObject, basicDBObject);
+		LOG.info("Password is properly updated for userId"+username);
+		UserDetailsResponse detailsResponse = new UserDetailsResponse();
+		detailsResponse.setUsername(username);
+		detailsResponse.setMessage("Password changed successfully");
+		if(LOG.isDebugEnabled()){
+			LOG.debug("Time Taken to execute UrlShorteningAPIServiceImpl is "+(new Date().getTime()-calculateTime));
+		}
+		return Response.ok().status(Status.OK).entity(detailsResponse).build();
 	}
 	
 	

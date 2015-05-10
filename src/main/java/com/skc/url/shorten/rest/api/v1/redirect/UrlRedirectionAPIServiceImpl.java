@@ -17,12 +17,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.skc.url.shorten.db.Mongo;
 import com.skc.url.shorten.exception.SystemGenericException;
 import com.skc.url.shorten.utils.CommonConstraints;
 import com.skc.url.shorten.utils.DateUtils;
+import com.skc.url.shorten.utils.MongoUtils;
 import com.skc.url.shorten.utils.ObjectUtils;
 
 /**
@@ -37,6 +37,9 @@ public class UrlRedirectionAPIServiceImpl {
 	
 	@Resource(name="mongo")
 	Mongo mongo;
+	
+	@Resource(name="mongoUtils")
+	MongoUtils utils; 
 	
 
 	@Value("host.system.url")
@@ -54,11 +57,9 @@ public class UrlRedirectionAPIServiceImpl {
 		if(LOG.isDebugEnabled()){
 			LOG.debug("Got a request for Shortening at "+new Date());
 		}
-		LOG.info("Checking the Shorten String from Database ");
-		DBCollection collection = mongo.getCollection(null, CommonConstraints.DB_COLLECTIONS_URL);
 		
 		DBObject dbObject = new BasicDBObject(CommonConstraints.SHORT_LINK,shortenPath);
-		DBObject dbResponse = collection.findOne(dbObject);
+		DBObject dbResponse = utils.getOneObjectFromCollection(CommonConstraints.DB_COLLECTIONS_URL, dbObject);
 		
 		if(ObjectUtils.checkNull(dbResponse)){
 			throw new SystemGenericException(CommonConstraints.ERROR_DB_500,CommonConstraints.ERROR_DB_500_MSG,hostUrl+request.getContextPath()+request.getServletPath()+CommonConstraints.DELIM_SLASH+shortenPath);
@@ -69,7 +70,7 @@ public class UrlRedirectionAPIServiceImpl {
 		BasicDBObject updatedObject = new BasicDBObject(CommonConstraints.UPDATED_DATE,DateUtils.convertDate(CommonConstraints.DATE_YYYY_MM_DD_HH_MM_SS_S_Z, new Date()));
 		updatedObject.putAll(dbResponse);
 		updatedObject.append(CommonConstraints.REDIRECTED_NUMBER, ++integer);
-		collection.update(dbObject, updatedObject);
+		utils.updateCollection(CommonConstraints.DB_COLLECTIONS_URL, dbObject, updatedObject);
 		LOG.info("Updated the Collections for redirection");
 		if(LOG.isDebugEnabled()){
 			LOG.debug("Time Taken to execute UrlShorteningAPIServiceImpl is "+(new Date().getTime()-calculateTime));

@@ -5,8 +5,9 @@ public class CommonConstraints {
 	/**
 	 * Authentication and Authorization
 	 * */
-	public static final String ENCRYPTION_SALT="sitakant";
 	public static final String ENCRYPTION_ALGORITHM="AES";
+	public static final String ENCRYPTION_SALT="sitakant";
+	public static final String ENCRYPTION_TYPE=ENCRYPTION_ALGORITHM+" Algo";
 	public static final String ENCRYPTION_INSTANCE_TYPE=ENCRYPTION_ALGORITHM+"/ECB/PKCS5Padding";
 	public static final String AUTHENTICATION_HEADER = "Authorization";
 	public static final String SHA_HASH_PROGRAMME="SHA1PRNG";
@@ -52,7 +53,8 @@ public class CommonConstraints {
 	/**
 	 * Error Code
 	 * */
-	public static final  String ERROR_DB_400="DB_400";
+	public static final String ERROR_APP_400="APP_400";
+	public static final String ERROR_DB_400="DB_400";
 	public static final String ERROR_DB_500="DB_500";
 	public static final String ERROR_WEB_500="WEB_500";
 	public static final String ERROR_WEB_400="WEB_400";
@@ -65,7 +67,8 @@ public class CommonConstraints {
 	 * Error Message
 	 * */
 	public static final String PLEASE_TRY_AFTER_SOME_TIME="Please try after some time.";
-	public static final String ERROR_DB_400_MSG="Unable to reach database."+PLEASE_TRY_AFTER_SOME_TIME;
+	public static final String ERROR_APP_400_MSG="Some Application needs to be initialize."+PLEASE_TRY_AFTER_SOME_TIME;
+	public static final String ERROR_DB_400_MSG="Database is down."+PLEASE_TRY_AFTER_SOME_TIME;
 	public static final String ERROR_DB_500_MSG="Required Data Not found in Database.";
 	public static final String ERROR_WEB_500_MSG="Some Error Occurs."+PLEASE_TRY_AFTER_SOME_TIME;
 	public static final String ERROR_WEB_400_MSG="Unable to locate the requested service ."+PLEASE_TRY_AFTER_SOME_TIME;
@@ -81,6 +84,7 @@ public class CommonConstraints {
 	public static final String LASTNAME = "lastname";
 	public static final String FIRSTNAME = "firstname";
 	public static final String PATH_USER = "/user";
+	public static final String IS_PASSWORD_CHANGE="is"+PASSWORD+"Change";
 	/**
 	 * Utility Constraints
 	 * */
