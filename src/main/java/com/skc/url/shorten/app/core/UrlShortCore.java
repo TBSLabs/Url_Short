@@ -10,6 +10,7 @@ import com.skc.url.shorten.exception.MongoExceptionProvider;
 import com.skc.url.shorten.exception.ParentExceptionProvider;
 import com.skc.url.shorten.exception.UrlShortenException;
 import com.skc.url.shorten.filter.BasicAuthenticationFilter;
+import com.skc.url.shorten.filter.CORSFilter;
 import com.skc.url.shorten.rest.api.v1.UrlShorteningAPIServiceImpl;
 import com.skc.url.shorten.rest.api.v1.redirect.UrlRedirectionAPIServiceImpl;
 import com.skc.url.shorten.rest.api.v1.user.UserServiceImpl;
@@ -30,7 +31,8 @@ public class UrlShortCore extends ResourceConfig{
 		registerClasses(UrlShortenException.class,UrlShorteningAPIServiceImpl.class,
 				UrlRedirectionAPIServiceImpl.class,UserServiceImpl.class,BasicAuthenticationFilter.class
 				,MongoExceptionProvider.class
-				,ParentExceptionProvider.class);
+				,ParentExceptionProvider.class
+				,CORSFilter.class);
 		
 		LOGGER.info("All Classes were register successfully");
 	}
